@@ -1,4 +1,6 @@
 package ru.skillbox.task_tracker.dto.user;
 
-public record UserRequest(String username, String email) {
+import java.util.List;
+
+public record UserRequest(String username, String email, String password, List<String> roles) {
 }

@@ -10,8 +10,6 @@ public record TaskRequest(
 
     String status,
 
-    String authorId,
-
     String assigneeId,
 
     List<String> observerIds

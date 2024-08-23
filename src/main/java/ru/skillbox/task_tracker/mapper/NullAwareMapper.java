@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 
 @Component
 public class NullAwareMapper extends BeanUtilsBean {
+
     @Override
     public void copyProperty(Object bean, String name, Object value) throws IllegalAccessException, InvocationTargetException {
         if (value == null) {
@@ -14,4 +15,5 @@ public class NullAwareMapper extends BeanUtilsBean {
         }
         super.copyProperty(bean, name, value);
     }
+
 }

@@ -1,25 +1,30 @@
 package ru.skillbox.task_tracker.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import ru.skillbox.task_tracker.dto.task.TaskRequest;
 import ru.skillbox.task_tracker.dto.task.TaskResponse;
 import ru.skillbox.task_tracker.mapper.TaskMapper;
+import ru.skillbox.task_tracker.model.Task;
 import ru.skillbox.task_tracker.service.TaskService;
+import ru.skillbox.task_tracker.service.UserService;
 
 @RestController
 @RequestMapping("/api/task")
 @RequiredArgsConstructor
-@Slf4j
 public class TaskController {
 
     private final TaskService taskService;
 
     private final TaskMapper taskMapper;
+
+    private final UserService userService;
 
     @GetMapping
     public Flux<TaskResponse> findAll() {
@@ -36,13 +41,23 @@ public class TaskController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<TaskResponse>> create(@RequestBody TaskRequest request) {
-        return taskService.create(taskMapper.toTask(request))
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    public Mono<ResponseEntity<TaskResponse>> create(@RequestBody TaskRequest request,
+                                                     @AuthenticationPrincipal UserDetails userDetails) {
+        return Mono.just(taskMapper.toTask(request))
+                .zipWhen(task -> userService.findByName(userDetails.getUsername()))
+                .map(t -> {
+                    Task task = t.getT1();
+                    task.setAuthorId(t.getT2().getId());
+                    return task;
+                })
+                .flatMap(taskService::create)
                 .map(taskMapper::toResponse)
                 .map(ResponseEntity::ok);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public Mono<ResponseEntity<TaskResponse>> update(@PathVariable String id, @RequestBody TaskRequest request) {
         return taskService.update(id, taskMapper.toTask(request))
                 .map(taskMapper::toResponse)
@@ -59,6 +74,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public Mono<ResponseEntity<Void>> delete(@PathVariable String id) {
         return taskService.delete(id)
                 .then(Mono.just(ResponseEntity.noContent().build()));

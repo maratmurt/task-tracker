@@ -1,7 +1,6 @@
 package ru.skillbox.task_tracker.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -14,7 +13,6 @@ import java.text.MessageFormat;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -37,7 +35,6 @@ public class UserService {
         return userRepository.findById(id).switchIfEmpty(Mono.error(new Exception(MessageFormat.format("Пользователь с ID {0} не найден", id)))).flatMap(existingUser -> {
             try {
                 nullAwareMapper.copyProperties(existingUser, user);
-                log.info(existingUser.toString());
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
@@ -49,4 +46,7 @@ public class UserService {
         return userRepository.deleteById(id);
     }
 
+    public Mono<User> findByName(String username) {
+        return userRepository.findByUsername(username);
+    }
 }
